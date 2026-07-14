@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node -r tsconfig-paths/register dist/server.js",
+    "start": "prisma migrate deploy && node -r tsconfig-paths/register dist/server.js",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix"
