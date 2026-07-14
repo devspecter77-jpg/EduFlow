@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Search, X, RefreshCw, Calendar,
+  Search, RefreshCw, Calendar,
   CheckCircle2, XCircle, Clock, AlertCircle,
   Users, History,
 } from 'lucide-react';
@@ -38,9 +38,6 @@ export function Attendance() {
 
   // Tarix modal
   const [historyStudent, setHistoryStudent] = useState<{ id: string; fullName: string } | null>(null);
-
-  const [filterStatus, setFilterStatus] = useState<AttendanceStatus | ''>('');
-
 
   // Stats
   const stats = {

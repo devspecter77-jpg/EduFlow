@@ -47,9 +47,6 @@ export function StudentAttendanceHistory({ studentId, studentName, onClose }: Pr
 
   useEffect(() => { load(); }, [load]);
 
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString('uz-UZ', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
       <div className="w-full max-w-lg rounded-2xl bg-card border shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
