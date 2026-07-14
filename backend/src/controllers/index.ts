@@ -1,0 +1,11 @@
+export * as healthController from './health.controller';
+export * as authController from './auth.controller';
+export * as studentController from './student.controller';
+export * as teacherController from './teacher.controller';
+export * as groupController from './group.controller';
+export * as attendanceController from './attendance.controller';
+export * as paymentController from './payment.controller';
+export * as notificationController from './notification.controller';
+export * as calendarController from './calendar.controller';
+export * as importController from './import.controller';
+export * as exportController from './export.controller';

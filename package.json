@@ -1,0 +1,24 @@
+{
+  "name": "eduflow-crm",
+  "version": "1.0.0",
+  "description": "Biz Educational Center CRM - Full Stack Application",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names \"frontend,backend\" --prefix-colors \"cyan,yellow\" \"npm run dev --prefix biz-crm\" \"npm run dev --prefix backend\"",
+    "dev:frontend": "npm run dev --prefix biz-crm",
+    "dev:backend": "npm run dev --prefix backend",
+    "build:frontend": "npm run build --prefix biz-crm",
+    "build:backend": "npm run build --prefix backend",
+    "build": "npm run build:frontend && npm run build:backend",
+    "start:backend": "npm start --prefix backend",
+    "prisma:generate": "npm run prisma:generate --prefix backend",
+    "prisma:migrate": "npm run prisma:migrate --prefix backend",
+    "prisma:studio": "npm run prisma:studio --prefix backend"
+  },
+  "keywords": ["crm", "education", "fullstack", "react", "node", "typescript"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.3"
+  }
+}

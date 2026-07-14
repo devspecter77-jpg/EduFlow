@@ -1,0 +1,11 @@
+export { Dashboard } from "./Dashboard";
+export { Students } from "./Students";
+export { Teachers } from "./Teachers";
+export { Groups } from "./Groups";
+export { Attendance } from "./Attendance";
+export { Payments } from "./Payments";
+export { PaymentsNew } from "./PaymentsNew";
+export { Settings } from "./Settings";
+export { NotFound } from "./NotFound";
+export { Analytics } from "./Analytics";
+export { Reports } from "./Reports";

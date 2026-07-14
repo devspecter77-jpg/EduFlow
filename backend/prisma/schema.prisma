@@ -1,0 +1,710 @@
+// Prisma Schema for Biz Educational Center CRM
+// Database: PostgreSQL (Neon)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // directUrl is used for Prisma migrations (bypasses PgBouncer)
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// AUTHENTICATION MODELS (Step 4)
+// ============================================
+
+enum Role {
+  SUPER_ADMIN  // Global system admin
+  ADMIN        // Center owner/admin
+  MANAGER      // Center manager
+  TEACHER      // Teacher
+}
+
+model User {
+  id          String   @id @default(cuid())
+  centerName  String   @map("center_name")
+  fullName    String   @map("full_name")
+  phone       String   @unique
+  email       String?  @unique
+  password    String
+  role        Role     @default(MANAGER)
+  isActive    Boolean  @default(true) @map("is_active")
+  avatar      String?
+  lastLoginAt DateTime? @map("last_login_at")
+  lastLoginIp String?   @map("last_login_ip")
+  
+  // Trial period
+  trialEndsAt DateTime? @map("trial_ends_at")
+  
+  // Multi-tenant: center reference
+  centerId    String?   @map("center_id")
+  center      Center?   @relation(fields: [centerId], references: [id], onDelete: SetNull)
+  
+  // Relations
+  refreshTokens    RefreshToken[]
+  students         Student[]
+  teachers         Teacher[]
+  groups           Group[]
+  settings         Settings?
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+  calendarEvents   CalendarEvent[]
+  notificationLogs NotificationLog[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+  @@index([phone])
+  @@index([email])
+  @@index([role])
+  @@index([centerId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  isRevoked Boolean  @default(false) @map("is_revoked")
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// ============================================
+// TEACHER MODEL (Step 5)
+// ============================================
+
+enum TeacherStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+}
+
+model Teacher {
+  id              String        @id @default(cuid())
+  userId          String        @map("user_id")
+  fullName        String        @map("full_name")
+  phone           String        @unique
+  birthDate       DateTime?     @map("birth_date")
+  gender          Gender        @default(MALE)
+  address         String?
+  groupIds        String[]      @default([]) @map("group_ids")
+  experience      Int           @default(0)
+  education       String?
+  salary          Float?
+  hireDate        DateTime?     @map("hire_date")
+  status          TeacherStatus @default(ACTIVE)
+  notes           String?
+  isDeleted       Boolean       @default(false) @map("is_deleted")
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groups          Group[]
+
+  // Timestamps
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("teachers")
+  @@index([userId])
+  @@index([status])
+  @@index([isDeleted])
+  @@index([fullName])
+  @@index([phone])
+}
+
+// ============================================
+// GROUP MODEL (Step 5)
+// ============================================
+
+enum GroupStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Group {
+  id              String        @id @default(cuid())
+  userId          String        @map("user_id")
+  name            String
+  subject         String
+  level           String
+  teacherId       String?       @map("teacher_id")
+  startDate       DateTime      @map("start_date")
+  endDate         DateTime?     @map("end_date")
+  schedule        String
+  courseFee       Float         @map("course_fee")
+  maxStudents     Int           @default(20) @map("max_students")
+  room            String?
+  status          GroupStatus   @default(ACTIVE)
+  description     String?
+  isDeleted       Boolean       @default(false) @map("is_deleted")
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacher         Teacher?      @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  students        StudentGroup[]
+  attendances     Attendance[]
+  payments        Payment[]
+
+  // Timestamps
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("groups")
+  @@index([userId])
+  @@index([teacherId])
+  @@index([status])
+  @@index([isDeleted])
+}
+
+// ============================================
+// STUDENT-GROUP RELATION (Many-to-Many)
+// ============================================
+
+model StudentGroup {
+  id         String   @id @default(cuid())
+  studentId  String   @map("student_id")
+  groupId    String   @map("group_id")
+  joinedAt   DateTime @default(now()) @map("joined_at")
+  leftAt     DateTime? @map("left_at")
+  isActive   Boolean  @default(true) @map("is_active")
+
+  // Relations
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, groupId])
+  @@map("student_groups")
+  @@index([studentId])
+  @@index([groupId])
+}
+
+// ============================================
+// ATTENDANCE MODEL (Step 5)
+// ============================================
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model Attendance {
+  id         String           @id @default(cuid())
+  studentId  String           @map("student_id")
+  groupId    String           @map("group_id")
+  date       DateTime
+  status     AttendanceStatus @default(PRESENT)
+  notes      String?
+
+  // Relations
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group      Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  @@unique([studentId, groupId, date])
+  @@map("attendances")
+  @@index([studentId])
+  @@index([groupId])
+  @@index([date])
+}
+
+// ============================================
+// PAYMENT MODEL (Step 5)
+// ============================================
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  studentId     String        @map("student_id")
+  groupId       String        @map("group_id")
+  amount        Float
+  paidAmount    Float         @default(0) @map("paid_amount")
+  dueDate       DateTime      @map("due_date")
+  paidDate      DateTime?     @map("paid_date")
+  status        PaymentStatus @default(PENDING)
+  method        PaymentMethod @default(CASH)
+  notes         String?
+  isDeleted     Boolean       @default(false) @map("is_deleted")
+
+  // Relations
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group         Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@map("payments")
+  @@index([studentId])
+  @@index([groupId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([isDeleted])
+}
+
+// ============================================
+// STUDENT MODEL (Step 5)
+// ============================================
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  EXPELLED
+}
+
+enum PaymentType {
+  MONTHLY
+  YEARLY
+}
+
+model Student {
+  id              String        @id @default(cuid())
+  userId          String        @map("user_id")
+  fullName        String        @map("full_name")
+  phone           String
+  parentFullName  String?       @map("parent_full_name")
+  parentPhone     String?       @map("parent_phone")
+  telegramId      String?       @map("telegram_id")
+  birthDate       DateTime?     @map("birth_date")
+  gender          Gender        @default(MALE)
+  address         String?
+  groupId         String?       @map("group_id")
+  status          StudentStatus @default(ACTIVE)
+  notes           String?
+  isDeleted       Boolean       @default(false) @map("is_deleted")
+
+  // To'lov ma'lumotlari
+  startDate       DateTime?     @map("start_date")
+  paymentType     PaymentType   @default(MONTHLY) @map("payment_type")
+  paymentAmount   Float?        @map("payment_amount")
+  paidAmount      Float         @default(0) @map("paid_amount")
+  remainingAmount Float         @default(0) @map("remaining_amount")
+  nextPaymentDate DateTime?     @map("next_payment_date")
+  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groups          StudentGroup[]
+  attendances     Attendance[]
+  payments        Payment[]
+
+  // Timestamps
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("students")
+  @@index([userId])
+  @@index([status])
+  @@index([isDeleted])
+  @@index([fullName])
+  @@index([phone])
+  @@index([groupId])
+}
+
+// ============================================
+// SETTINGS MODEL (Step 8)
+// ============================================
+
+enum Currency {
+  UZS
+  USD
+}
+
+enum DateFormat {
+  DD_MM_YYYY
+  MM_DD_YYYY
+  YYYY_MM_DD
+}
+
+enum Language {
+  UZ
+  RU
+  EN
+}
+
+model Settings {
+  id                    String      @id @default(cuid())
+  userId                String      @unique @map("user_id")
+  
+  // O'quv markazi ma'lumotlari
+  centerName            String      @map("center_name")
+  logo                  String?
+  phone                 String?
+  email                 String?
+  address               String?
+  workingHours          String?     @map("working_hours")
+  telegram              String?
+  instagram             String?
+  website               String?
+  description           String?
+  
+  // CRM Sozlamalari
+  currency              Currency    @default(UZS)
+  timezone              String      @default("Asia/Tashkent")
+  dateFormat            DateFormat  @default(DD_MM_YYYY) @map("date_format")
+  language              Language    @default(UZ)
+  theme                 String      @default("light")
+  defaultPagination     Int         @default(20) @map("default_pagination")
+  
+  // To'lov sozlamalari
+  defaultCourseFee      Float       @default(500000) @map("default_course_fee")
+  lateDays              Int         @default(5) @map("late_days")
+  defaultPaymentType    PaymentType @default(MONTHLY) @map("default_payment_type")
+  reminderEnabled       Boolean     @default(true) @map("reminder_enabled")
+  reminderDaysBefore    Int         @default(3) @map("reminder_days_before")
+  
+  // Telegram sozlamalari (Step 11)
+  telegramEnabled       Boolean     @default(false) @map("telegram_enabled")
+  telegramBotToken      String?     @map("telegram_bot_token")
+  telegramAdminChatId   String?     @map("telegram_admin_chat_id")
+  paymentReminderEnabled Boolean    @default(true) @map("payment_reminder_enabled")
+  attendanceAlertEnabled Boolean    @default(true) @map("attendance_alert_enabled")
+  
+  // Relations
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+// ============================================
+// AUDIT LOG MODEL (Step 8)
+// ============================================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  PAYMENT_MADE
+  ATTENDANCE_MARKED
+}
+
+model AuditLog {
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  action        AuditAction
+  entity        String
+  entityId      String?     @map("entity_id")
+  description   String
+  metadata      String?
+  ipAddress     String?     @map("ip_address")
+  userAgent     String?     @map("user_agent")
+  
+  // Relations
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
+
+// ============================================
+// NOTIFICATION MODEL (Step 10)
+// ============================================
+
+enum NotificationType {
+  NEW_STUDENT
+  NEW_GROUP
+  PAYMENT_RECEIVED
+  PAYMENT_OVERDUE
+  CLASS_TODAY
+  ATTENDANCE_MISSING
+  SYSTEM
+}
+
+model Notification {
+  id            String           @id @default(cuid())
+  userId        String           @map("user_id")
+  type          NotificationType
+  title         String
+  message       String
+  entityType    String?          @map("entity_type")
+  entityId      String?          @map("entity_id")
+  isRead        Boolean          @default(false) @map("is_read")
+  readAt        DateTime?        @map("read_at")
+  
+  // Relations
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  @@map("notifications")
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ============================================
+// CALENDAR EVENT MODEL (Step 10)
+// ============================================
+
+enum EventType {
+  CLASS
+  PAYMENT_DUE
+  REMINDER
+  MEETING
+  EXAM
+  HOLIDAY
+  OTHER
+}
+
+model CalendarEvent {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  type          EventType
+  title         String
+  description   String?
+  startDate     DateTime  @map("start_date")
+  endDate       DateTime  @map("end_date")
+  allDay        Boolean   @default(false) @map("all_day")
+  color         String?
+  location      String?
+  groupId       String?   @map("group_id")
+  studentId     String?   @map("student_id")
+  isRecurring   Boolean   @default(false) @map("is_recurring")
+  recurringRule String?   @map("recurring_rule")
+  isDeleted     Boolean   @default(false) @map("is_deleted")
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("calendar_events")
+  @@index([userId])
+  @@index([type])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([isDeleted])
+}
+
+// ============================================
+// NOTIFICATION LOG MODEL (Step 11)
+// ============================================
+
+enum NotificationChannel {
+  TELEGRAM
+  SYSTEM
+  SMS
+}
+
+enum NotificationLogStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model NotificationLog {
+  id            String                  @id @default(cuid())
+  userId        String                  @map("user_id")
+  channel       NotificationChannel
+  status        NotificationLogStatus   @default(PENDING)
+  recipientName String                  @map("recipient_name")
+  recipientId   String?                 @map("recipient_id")
+  title         String
+  message       String
+  entityType    String?                 @map("entity_type")
+  entityId      String?                 @map("entity_id")
+  errorMessage  String?                 @map("error_message")
+  sentAt        DateTime?               @map("sent_at")
+  
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+
+  @@map("notification_logs")
+  @@index([userId])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================
+// SUPER ADMIN — CENTER, PLAN, SUBSCRIPTION (Step 12)
+// ============================================
+
+enum PlanType {
+  FREE
+  STANDARD
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum PaymentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentRequestMethod {
+  MANUAL
+  CLICK
+  PAYME
+  CARD
+}
+
+enum CenterStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+model Plan {
+  id                String    @id @default(cuid())
+  type              PlanType  @unique
+  name              String
+  price             Float     @default(0)
+  maxStudents       Int       @default(50)
+  maxTeachers       Int       @default(5)
+  maxGroups         Int       @default(5)
+  trialDays         Int       @default(10)
+  features          String    @default("[]")
+  isActive          Boolean   @default(true) @map("is_active")
+
+  subscriptions     Subscription[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("plans")
+}
+
+model Center {
+  id              String       @id @default(cuid())
+  name            String
+  slug            String       @unique
+  phone           String?
+  email           String?
+  address         String?
+  logo            String?
+  description     String?
+  status          CenterStatus @default(ACTIVE)
+  isDeleted       Boolean      @default(false) @map("is_deleted")
+
+  // Relations
+  users           User[]
+  subscriptions   Subscription[]
+  paymentRequests PaymentRequest[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("centers")
+  @@index([slug])
+  @@index([status])
+  @@index([isDeleted])
+}
+
+model Subscription {
+  id            String             @id @default(cuid())
+  centerId      String             @map("center_id")
+  planId        String             @map("plan_id")
+  status        SubscriptionStatus @default(TRIAL)
+  startDate     DateTime           @map("start_date")
+  endDate       DateTime           @map("end_date")
+  price         Float              @default(0)
+  notes         String?
+
+  center        Center             @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  plan          Plan               @relation(fields: [planId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+  @@index([centerId])
+  @@index([planId])
+  @@index([status])
+  @@index([endDate])
+}
+
+// ============================================
+// PAYMENT REQUEST MODEL (Step 15 — Billing)
+// ============================================
+
+model PaymentRequest {
+  id            String               @id @default(cuid())
+  centerId      String               @map("center_id")
+  amount        Float
+  status        PaymentRequestStatus @default(PENDING)
+  method        PaymentRequestMethod @default(MANUAL)
+  receiptImage  String?              @map("receipt_image")  // screenshot URL
+  notes         String?
+  rejectionNote String?              @map("rejection_note")
+  approvedById  String?              @map("approved_by_id")
+  approvedAt    DateTime?            @map("approved_at")
+
+  center        Center               @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  @@map("payment_requests")
+  @@index([centerId])
+  @@index([status])
+  @@index([createdAt])
+}
