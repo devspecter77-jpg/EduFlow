@@ -48,9 +48,9 @@ export function StudentViewModal({ student, groupMap, onClose, onEdit }: Props) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="w-full max-w-md rounded-2xl bg-card border shadow-2xl">
+      <div className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-card border shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
+        <div className="flex items-center justify-between border-b px-6 py-4 flex-shrink-0">
           <h2 className="text-lg font-semibold">O'quvchi ma'lumotlari</h2>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-accent transition-colors">
             <X className="h-5 w-5" />
@@ -58,7 +58,7 @@ export function StudentViewModal({ student, groupMap, onClose, onEdit }: Props) 
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto">
           {/* Avatar + Name */}
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/30 text-2xl font-bold text-teal-600 dark:text-teal-400">
@@ -72,7 +72,7 @@ export function StudentViewModal({ student, groupMap, onClose, onEdit }: Props) 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 pt-2">
             <InfoRow icon={Phone} label="Telefon" value={formatPhone(student.phone)} />
             {student.parentFullName && (
               <InfoRow icon={User} label="Ota-ona" value={student.parentFullName} />
@@ -112,7 +112,7 @@ export function StudentViewModal({ student, groupMap, onClose, onEdit }: Props) 
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 border-t px-6 py-4">
+        <div className="flex gap-3 border-t px-6 py-4 flex-shrink-0">
           <button onClick={onClose} className="flex-1 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">
             Yopish
           </button>
