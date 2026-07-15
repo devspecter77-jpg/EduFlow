@@ -8,6 +8,7 @@ import { authenticate } from '@/middleware/auth.middleware';
 import asyncHandler from '@/middleware/asyncHandler';
 import type { Request, Response, NextFunction } from 'express';
 import {
+  getPublicPlans,
   getMySubscription,
   createPaymentRequest,
   getMyPaymentRequests,
@@ -18,6 +19,11 @@ import {
 } from '@/controllers/billing.controller';
 
 const router = Router();
+
+// ─── Public Routes (no auth) ──────────────────────────────────────────────
+// Used by the marketing pricing page to mirror the live plan configuration
+router.get('/plans', asyncHandler(getPublicPlans));
+
 router.use(authenticate);
 
 // ─── Admin / Center User Routes ───────────────────────────────────────────

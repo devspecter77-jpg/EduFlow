@@ -1,52 +1,47 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Check, Sparkles, Crown, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '@/contexts/AuthContext';
+import { billingApi, type PublicPlan } from '@/lib/api/billing';
 
-const plans = [
-  {
-    name: 'Sinov',
-    tagline: 'Yangi boshlayotgan markazlar uchun',
-    icon: Sparkles,
-    price: 'Bepul',
-    duration: '10 kun',
-    badge: null,
-    highlighted: false,
+interface DisplayPlan {
+  name: string;
+  tagline: string;
+  icon: typeof Sparkles;
+  price: string;
+  duration: string;
+  badge: string | null;
+  highlighted: boolean;
+  features: string[];
+}
+
+function toDisplayPlan(plan: PublicPlan, isMostExpensive: boolean): DisplayPlan {
+  const isFree = plan.price === 0;
+  let features: string[] = [];
+  try {
+    features = JSON.parse(plan.features);
+  } catch {
+    features = [];
+  }
+
+  return {
+    name: plan.name,
+    tagline: isFree
+      ? 'Yangi boshlayotgan markazlar uchun'
+      : "Faol o'sib borayotgan markazlar uchun",
+    icon: isMostExpensive ? Crown : Sparkles,
+    price: isFree ? 'Bepul' : plan.price.toLocaleString('uz-UZ'),
+    duration: isFree && plan.trialDays > 0 ? `${plan.trialDays} kun` : "so'm/oy",
+    badge: isMostExpensive ? 'Tavsiya etiladi' : null,
+    highlighted: isMostExpensive,
     features: [
-      "10 kunlik bepul sinov",
-      "50 o'quvchigacha",
-      "5 o'qituvchi",
-      "5 guruh",
-      'SMS bildirishnomalar',
-      'Telegram bot',
-      'Barcha funksiyalar',
-      'Online qo\'llab-quvvatlash',
+      `${plan.maxStudents} o'quvchigacha`,
+      `${plan.maxTeachers} o'qituvchi`,
+      `${plan.maxGroups} guruh`,
+      ...features,
     ],
-  },
-  {
-    name: 'Premium',
-    tagline: 'Faol o\'sib borayotgan markazlar uchun',
-    icon: Crown,
-    price: '200 000',
-    duration: "so'm/oy",
-    badge: 'Tavsiya etiladi',
-    highlighted: true,
-    features: [
-      "200 o'quvchigacha",
-      "20 o'qituvchi",
-      "30 guruh",
-      'Cheklanmagan funksiyalar',
-      'Excel import/export',
-      'SMS bildirishnomalar',
-      'Telegram bot integratsiya',
-      'To\'lov izlash',
-      'Davomat tizimi',
-      'Kengaytirilgan hisobotlar',
-      "Priority qo'llab-quvvatlash",
-      '24/7 yordam',
-    ],
-  },
-];
+  };
+}
 
 export function Pricing() {
   const authCtx = useContext(AuthContext);
@@ -54,6 +49,19 @@ export function Pricing() {
   // Already-logged-in users land on Billing (to actually pay/upgrade),
   // not Register — registering again makes no sense for an existing account.
   const ctaTarget = isAuthenticated ? '/dashboard/billing' : '/register';
+
+  const [plans, setPlans] = useState<DisplayPlan[]>([]);
+
+  useEffect(() => {
+    billingApi.getPublicPlans()
+      .then((data) => {
+        const maxPrice = Math.max(...data.map((p) => p.price));
+        setPlans(data.map((p) => toDisplayPlan(p, p.price === maxPrice && maxPrice > 0)));
+      })
+      .catch(() => setPlans([]));
+  }, []);
+
+  if (plans.length === 0) return null;
 
   return (
     <section id="pricing" className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-800/50">

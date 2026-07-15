@@ -8,6 +8,26 @@ import { sendSuccess, sendError } from '@/utils/response';
 
 const db = prisma as any;
 
+// ─── Public: List active plans (used by the marketing pricing page) ───────
+export async function getPublicPlans(_req: Request, res: Response): Promise<void> {
+  const plans = await db.plan.findMany({
+    where: { isActive: true },
+    orderBy: { price: 'asc' },
+    select: {
+      id: true,
+      type: true,
+      name: true,
+      price: true,
+      maxStudents: true,
+      maxTeachers: true,
+      maxGroups: true,
+      trialDays: true,
+      features: true,
+    },
+  });
+  sendSuccess(res, plans);
+}
+
 // ─── Admin: Get my subscription info ──────────────────────────────────────
 export async function getMySubscription(req: Request, res: Response): Promise<void> {
   try {

@@ -65,9 +65,27 @@ export interface SubscriptionItem {
   };
 }
 
+export interface PublicPlan {
+  id: string;
+  type: string;
+  name: string;
+  price: number;
+  maxStudents: number;
+  maxTeachers: number;
+  maxGroups: number;
+  trialDays: number;
+  features: string; // JSON-encoded string[]
+}
+
 // ─── Admin API ────────────────────────────────────────────────────────────
 
 export const billingApi = {
+  // Public: active plans, for the marketing pricing page
+  async getPublicPlans(): Promise<PublicPlan[]> {
+    const res = await api.get<{ data: PublicPlan[] }>('/billing/plans');
+    return res.data.data;
+  },
+
   // Get my subscription info
   async getMySubscription(): Promise<MySubscriptionResponse> {
     const res = await api.get<{ data: MySubscriptionResponse }>('/billing/my-subscription');
