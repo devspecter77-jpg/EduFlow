@@ -86,10 +86,10 @@ export function Pricing() {
             return (
               <div
                 key={plan.name}
-                className={`relative rounded-3xl p-6 sm:p-8 transition-all duration-300 flex flex-col ${
+                className={`relative rounded-3xl p-6 sm:p-8 transition-all duration-300 flex flex-col h-full ${
                   plan.highlighted
-                    ? 'bg-gradient-to-br from-teal-600 via-teal-600 to-cyan-600 text-white shadow-2xl shadow-teal-500/20 md:scale-105 ring-1 ring-teal-400/50'
-                    : 'bg-white dark:bg-gray-800 shadow-sm hover:shadow-xl border border-gray-100 dark:border-gray-700 hover:-translate-y-1'
+                    ? 'bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-2xl shadow-amber-500/10 ring-1 ring-amber-400/30'
+                    : 'bg-white dark:bg-gray-800 shadow-sm hover:shadow-xl border-2 border-indigo-100 dark:border-indigo-900/40 hover:-translate-y-1'
                 }`}
               >
                 {plan.badge && (
@@ -104,40 +104,40 @@ export function Pricing() {
                 <div className="mb-6">
                   <div
                     className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl mb-4 ${
-                      plan.highlighted ? 'bg-white/15' : 'bg-teal-50 dark:bg-teal-900/30'
+                      plan.highlighted ? 'bg-amber-400/10' : 'bg-indigo-50 dark:bg-indigo-900/30'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${plan.highlighted ? 'text-white' : 'text-teal-600 dark:text-teal-400'}`} />
+                    <Icon className={`w-5 h-5 ${plan.highlighted ? 'text-amber-400' : 'text-indigo-600 dark:text-indigo-400'}`} />
                   </div>
                   <h3 className={`text-xl font-bold ${plan.highlighted ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                     {plan.name}
                   </h3>
-                  <p className={`text-sm mt-1 ${plan.highlighted ? 'text-teal-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                  <p className={`text-sm mt-1 ${plan.highlighted ? 'text-slate-400' : 'text-gray-500 dark:text-gray-400'}`}>
                     {plan.tagline}
                   </p>
                   <div className="mt-4 flex items-baseline gap-2">
                     <span className={`text-4xl font-extrabold tracking-tight ${plan.highlighted ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                       {plan.price}
                     </span>
-                    <span className={`text-sm font-medium ${plan.highlighted ? 'text-teal-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <span className={`text-sm font-medium ${plan.highlighted ? 'text-slate-400' : 'text-gray-500 dark:text-gray-400'}`}>
                       {plan.duration}
                     </span>
                   </div>
                 </div>
 
-                <div className={`h-px w-full mb-6 ${plan.highlighted ? 'bg-white/15' : 'bg-gray-100 dark:bg-gray-700'}`} />
+                <div className={`h-px w-full mb-6 ${plan.highlighted ? 'bg-white/10' : 'bg-gray-100 dark:bg-gray-700'}`} />
 
                 <ul className="space-y-3 mb-8 flex-grow">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-3">
                       <span
                         className={`flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0 ${
-                          plan.highlighted ? 'bg-white/20' : 'bg-teal-50 dark:bg-teal-900/30'
+                          plan.highlighted ? 'bg-amber-400/15' : 'bg-indigo-50 dark:bg-indigo-900/30'
                         }`}
                       >
-                        <Check className={`w-3 h-3 ${plan.highlighted ? 'text-white' : 'text-teal-600 dark:text-teal-400'}`} />
+                        <Check className={`w-3 h-3 ${plan.highlighted ? 'text-amber-400' : 'text-indigo-600 dark:text-indigo-400'}`} />
                       </span>
-                      <span className={`text-sm ${plan.highlighted ? 'text-teal-50' : 'text-gray-600 dark:text-gray-300'}`}>
+                      <span className={`text-sm ${plan.highlighted ? 'text-slate-200' : 'text-gray-600 dark:text-gray-300'}`}>
                         {feature}
                       </span>
                     </li>
@@ -148,8 +148,8 @@ export function Pricing() {
                   to={ctaTarget}
                   className={`group flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                     plan.highlighted
-                      ? 'bg-white text-teal-700 hover:bg-teal-50 shadow-sm'
-                      : 'border-2 border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20'
+                      ? 'bg-amber-400 text-slate-900 hover:bg-amber-300 shadow-sm'
+                      : 'border-2 border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
                   }`}
                 >
                   Boshlash
