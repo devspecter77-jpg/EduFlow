@@ -26,13 +26,13 @@ WORKDIR /app
 
 # Copy only production dependencies
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm ci --only=production && npm cache clean --force
 
 # Copy built files and Prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY prisma ./prisma
 
 # Create logs directory with correct ownership
 RUN mkdir -p logs && chown -R nodejs:nodejs /app
