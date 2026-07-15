@@ -30,13 +30,14 @@ router.get('/stats', asyncHandler(async (req: Request, res: Response): Promise<v
       where: { userId, isDeleted: false, status: 'ACTIVE' },
     }),
     prisma.attendance.count({
-      where: { date: { gte: today, lt: tomorrow } },
+      where: { date: { gte: today, lt: tomorrow }, student: { userId } },
     }),
     prisma.payment.aggregate({
       where: {
         isDeleted: false,
         status: 'PAID',
         paidDate: { gte: startOfMonth, lte: endOfMonth },
+        student: { userId },
       },
       _sum: { paidAmount: true },
     }),
@@ -44,11 +45,12 @@ router.get('/stats', asyncHandler(async (req: Request, res: Response): Promise<v
       where: {
         isDeleted: false,
         paidDate: { gte: today, lt: tomorrow },
+        student: { userId },
       },
       _sum: { paidAmount: true },
     }),
     prisma.payment.count({
-      where: { isDeleted: false, status: 'OVERDUE' },
+      where: { isDeleted: false, status: 'OVERDUE', student: { userId } },
     }),
   ]);
 
