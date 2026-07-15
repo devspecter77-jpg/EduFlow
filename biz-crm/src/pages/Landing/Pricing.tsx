@@ -23,6 +23,8 @@ function toDisplayPlan(plan: PublicPlan, isMostExpensive: boolean): DisplayPlan 
   } catch {
     features = [];
   }
+  // Telegram bot is temporarily disabled sitewide — hide it even if still listed in the plan record
+  features = features.filter((f) => !f.toLowerCase().includes('telegram'));
 
   return {
     name: plan.name,
