@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Install dependencies first (cached layer)
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm ci --only=production=false
 
 # Copy source
