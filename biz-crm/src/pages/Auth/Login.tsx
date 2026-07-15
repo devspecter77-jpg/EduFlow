@@ -5,14 +5,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Moon, Sun, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { loginSchema, type LoginInput } from '@/lib/validations/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useApp();
+  const toggleTheme = () => setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -73,7 +74,7 @@ export function LoginPage() {
         className="fixed top-4 right-4 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all"
         aria-label="Rejim almashtirish"
       >
-        {theme === 'light' ? (
+        {resolvedTheme === 'light' ? (
           <Moon className="w-5 h-5 text-gray-600" />
         ) : (
           <Sun className="w-5 h-5 text-gray-300" />

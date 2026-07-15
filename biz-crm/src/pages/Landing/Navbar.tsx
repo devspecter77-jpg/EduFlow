@@ -1,11 +1,12 @@
 import { useState, useRef, useContext } from 'react';
 import { Moon, Sun, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useApp } from '@/contexts/AppContext';
 import { AuthContext } from '@/contexts/AuthContext';
 
 export function Navbar() {
-  const { theme, toggleTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useApp();
+  const toggleTheme = () => setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
   const authCtx = useContext(AuthContext);
   const isAuthenticated = authCtx?.isAuthenticated ?? false;
   const login = authCtx?.login;
@@ -80,7 +81,7 @@ export function Navbar() {
               className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
               aria-label="Mavzuni o'zgartirish"
             >
-              {theme === 'light' ? (
+              {resolvedTheme === 'light' ? (
                 <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               ) : (
                 <Sun className="w-5 h-5 text-gray-300" />
