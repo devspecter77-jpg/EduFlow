@@ -1,21 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface PageLoaderProps {
-  duration?: number; // ms
+  // Real readiness signal (e.g. auth check in progress) instead of a fixed timer —
+  // the splash disappears as soon as the app is actually ready, not after an
+  // arbitrary delay that makes every load/refresh feel stuck.
+  loading: boolean;
 }
 
-export function PageLoader({ duration = 2400 }: PageLoaderProps) {
+export function PageLoader({ loading }: PageLoaderProps) {
   const [visible, setVisible] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
+  const wasLoading = useRef(loading);
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setFadeOut(true), duration - 500);
-    const hideTimer = setTimeout(() => setVisible(false), duration);
-    return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(hideTimer);
-    };
-  }, [duration]);
+    if (!loading && wasLoading.current) {
+      setFadeOut(true);
+      const hideTimer = setTimeout(() => setVisible(false), 300);
+      return () => clearTimeout(hideTimer);
+    }
+    wasLoading.current = loading;
+  }, [loading]);
 
   if (!visible) return null;
 
