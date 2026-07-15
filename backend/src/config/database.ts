@@ -31,8 +31,9 @@ export const testDatabaseConnection = async (): Promise<boolean> => {
     await prisma.$queryRaw`SELECT 1`;
     process.stdout.write('[DB] Connected successfully\n');
     return true;
-  } catch {
-    process.stderr.write('[DB] Connection failed\n');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`[DB] Connection failed: ${message}\n`);
     return false;
   }
 };
