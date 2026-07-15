@@ -1,6 +1,9 @@
 # ─── Build Stage ──────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
+# Prisma's musl query engine needs OpenSSL at runtime; Alpine's base image doesn't ship it
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Install dependencies first (cached layer)
@@ -19,6 +22,9 @@ RUN npm run build
 
 # ─── Production Stage ─────────────────────────────────────────────────────────
 FROM node:20-alpine AS production
+
+# Prisma's musl query engine needs OpenSSL at runtime; Alpine's base image doesn't ship it
+RUN apk add --no-cache openssl
 
 # Security: run as non-root
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
