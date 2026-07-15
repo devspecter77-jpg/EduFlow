@@ -5,6 +5,7 @@ import { SubscriptionBanner } from "@/components/common";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTrial } from "@/hooks/useTrial";
 import { ROUTES } from "@/constants";
+import { schedulePrefetch } from "@/routes/prefetch";
 
 export function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -18,6 +19,10 @@ export function DashboardLayout() {
       navigate(ROUTES.TRIAL_EXPIRED, { replace: true });
     }
   }, [user, isExpired, navigate]);
+
+  useEffect(() => {
+    schedulePrefetch();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">

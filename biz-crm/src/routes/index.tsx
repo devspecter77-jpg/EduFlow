@@ -97,6 +97,8 @@ const TrialExpired = lazy(() =>
 );
 
 // ─── Suspense Wrapper ─────────────────────────────────────────────────────
+// Full-screen fallback — for standalone pages with no persistent layout
+// (Landing/Login/Register) where a centered full-height spinner is correct.
 function Lazy({ children }: { children: React.ReactNode }) {
   return (
     <Suspense
@@ -106,6 +108,23 @@ function Lazy({ children }: { children: React.ReactNode }) {
             <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-gray-500 dark:text-gray-400">Yuklanmoqda...</p>
           </div>
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+}
+
+// Lighter fallback for pages nested inside DashboardLayout — the sidebar/header
+// already stay mounted, so a full-height overlay here just makes navigation
+// look like the whole app reloaded instead of a quick in-place page swap.
+function DashboardLazy({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-24">
+          <div className="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >
@@ -136,29 +155,29 @@ export const router = createBrowserRouter([
     path: ROUTES.DASHBOARD,
     element: <DashboardLayout />,
     children: [
-      { index: true, element: <Lazy><Dashboard /></Lazy> },
-      { path: 'students', element: <Lazy><Students /></Lazy> },
-      { path: 'teachers', element: <Lazy><Teachers /></Lazy> },
-      { path: 'groups', element: <Lazy><Groups /></Lazy> },
-      { path: 'attendance', element: <Lazy><Attendance /></Lazy> },
-      { path: 'payments', element: <Lazy><PaymentsNew /></Lazy> },
-      { path: 'analytics', element: <Lazy><Analytics /></Lazy> },
-      { path: 'reports', element: <Lazy><Reports /></Lazy> },
-      { path: 'notifications', element: <Lazy><SmartNotifications /></Lazy> },
-      { path: 'settings', element: <Lazy><Settings /></Lazy> },
-      { path: 'billing', element: <Lazy><BillingPage /></Lazy> },
+      { index: true, element: <DashboardLazy><Dashboard /></DashboardLazy> },
+      { path: 'students', element: <DashboardLazy><Students /></DashboardLazy> },
+      { path: 'teachers', element: <DashboardLazy><Teachers /></DashboardLazy> },
+      { path: 'groups', element: <DashboardLazy><Groups /></DashboardLazy> },
+      { path: 'attendance', element: <DashboardLazy><Attendance /></DashboardLazy> },
+      { path: 'payments', element: <DashboardLazy><PaymentsNew /></DashboardLazy> },
+      { path: 'analytics', element: <DashboardLazy><Analytics /></DashboardLazy> },
+      { path: 'reports', element: <DashboardLazy><Reports /></DashboardLazy> },
+      { path: 'notifications', element: <DashboardLazy><SmartNotifications /></DashboardLazy> },
+      { path: 'settings', element: <DashboardLazy><Settings /></DashboardLazy> },
+      { path: 'billing', element: <DashboardLazy><BillingPage /></DashboardLazy> },
     ],
   },
   {
     path: '/super-admin',
     element: <DashboardLayout />,
     children: [
-      { index: true, element: <Lazy><SuperAdminDashboard /></Lazy> },
-      { path: 'users', element: <Lazy><SuperAdminUsers /></Lazy> },
-      { path: 'centers', element: <Lazy><SuperAdminCenters /></Lazy> },
-      { path: 'centers/:id', element: <Lazy><CenterDetail /></Lazy> },
-      { path: 'plans', element: <Lazy><SuperAdminPlans /></Lazy> },
-      { path: 'subscriptions', element: <Lazy><SuperAdminSubscriptions /></Lazy> },
+      { index: true, element: <DashboardLazy><SuperAdminDashboard /></DashboardLazy> },
+      { path: 'users', element: <DashboardLazy><SuperAdminUsers /></DashboardLazy> },
+      { path: 'centers', element: <DashboardLazy><SuperAdminCenters /></DashboardLazy> },
+      { path: 'centers/:id', element: <DashboardLazy><CenterDetail /></DashboardLazy> },
+      { path: 'plans', element: <DashboardLazy><SuperAdminPlans /></DashboardLazy> },
+      { path: 'subscriptions', element: <DashboardLazy><SuperAdminSubscriptions /></DashboardLazy> },
     ],
   },
   {
