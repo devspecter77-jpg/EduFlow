@@ -5,7 +5,7 @@ const faqs = [
   {
     question: 'EduFlow bepulmi?',
     answer:
-      "Ha, 14 kunlik bepul sinov muddati mavjud. Kredit karta talab qilinmaydi. Sinov tugagach, o'zingizga mos rejani tanlashingiz mumkin.",
+      "Ha, 10 kunlik bepul sinov muddati mavjud. Kredit karta talab qilinmaydi. Sinov tugagach, o'zingizga mos rejani tanlashingiz mumkin.",
   },
   {
     question: "Ma'lumotlarim xavfsizmi?",
@@ -15,7 +15,7 @@ const faqs = [
   {
     question: "Nechta o'quvchi qo'shish mumkin?",
     answer:
-      "Bu tanlagan rejaingizga bog'liq. Basic rejada 50 tagacha, Standard rejada 200 tagacha, Premium rejada esa cheksiz o'quvchi qo'shish mumkin.",
+      "Bu tanlagan tarifingizga bog'liq — aniq limitlarni yuqoridagi \"Narxlar\" bo'limidagi tarif kartalarida ko'rishingiz mumkin.",
   },
   {
     question: 'SMS xabarlar qanday ishlaydi?',

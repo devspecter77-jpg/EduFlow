@@ -9,7 +9,7 @@ export function CTA() {
           Bugun bepul boshlang
         </h2>
         <p className="text-lg text-slate-400 mb-10 max-w-xl mx-auto">
-          14 kunlik sinov muddati. Kredit karta kerak emas. O'rnatish talab qilinmaydi.
+          10 kunlik sinov muddati. Kredit karta kerak emas. O'rnatish talab qilinmaydi.
         </p>
 
         <div className="flex justify-center mb-10">
