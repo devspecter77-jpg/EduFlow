@@ -15,6 +15,16 @@ import {
 } from '@/lib/api/dashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
+import { getPageCache, setPageCache } from '@/lib/pageDataCache';
+
+interface DashboardCache {
+  stats: DashboardStats;
+  recentStudents: RecentStudent[];
+  recentTeachers: RecentTeacher[];
+  recentGroups: RecentGroup[];
+  recentPayments: RecentPayment[];
+}
+const CACHE_KEY = 'dashboard';
 
 function StatCard({
   title, value, icon: Icon, color, suffix, loading,
@@ -179,7 +189,8 @@ function RecentPaymentCard({ payment }: { payment: RecentPayment }) {
 export function Dashboard() {
   const { user } = useAuth();
   const { t } = useApp();
-  const [stats, setStats] = useState<DashboardStats>({
+  const cached = getPageCache<DashboardCache>(CACHE_KEY);
+  const [stats, setStats] = useState<DashboardStats>(cached?.stats ?? {
     totalStudents: 0,
     totalTeachers: 0,
     activeGroups: 0,
@@ -188,15 +199,17 @@ export function Dashboard() {
     todayPayments: 0,
     overdueCount: 0,
   });
-  const [recentStudents, setRecentStudents] = useState<RecentStudent[]>([]);
-  const [recentTeachers, setRecentTeachers] = useState<RecentTeacher[]>([]);
-  const [recentGroups, setRecentGroups] = useState<RecentGroup[]>([]);
-  const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [recentStudents, setRecentStudents] = useState<RecentStudent[]>(cached?.recentStudents ?? []);
+  const [recentTeachers, setRecentTeachers] = useState<RecentTeacher[]>(cached?.recentTeachers ?? []);
+  const [recentGroups, setRecentGroups] = useState<RecentGroup[]>(cached?.recentGroups ?? []);
+  const [recentPayments, setRecentPayments] = useState<RecentPayment[]>(cached?.recentPayments ?? []);
+  // Only block on a spinner the first time this page has no cached data yet —
+  // repeat visits show the last-known numbers instantly while refreshing quietly.
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
 
   const loadDashboard = async () => {
-    setLoading(true);
+    if (!getPageCache<DashboardCache>(CACHE_KEY)) setLoading(true);
     setError(null);
     try {
       const [statsData, studentsData, teachersData, groupsData, paymentsData] = await Promise.all([
@@ -211,6 +224,10 @@ export function Dashboard() {
       setRecentTeachers(teachersData);
       setRecentGroups(groupsData);
       setRecentPayments(paymentsData);
+      setPageCache<DashboardCache>(CACHE_KEY, {
+        stats: statsData, recentStudents: studentsData, recentTeachers: teachersData,
+        recentGroups: groupsData, recentPayments: paymentsData,
+      });
     } catch (err) {
       setError('Ma\'lumotlarni yuklashda xatolik yuz berdi');
       console.error(err);

@@ -13,6 +13,13 @@ import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { Loader3D } from '@/components/Loader3D';
 import { useToast } from '@/contexts/ToastContext';
 import { useDebounce } from '@/hooks/useDebounce';
+import { getPageCache, setPageCache } from '@/lib/pageDataCache';
+
+interface GroupsCache {
+  groups: Group[];
+  total: number;
+  totalPages: number;
+}
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Faol',
@@ -38,12 +45,18 @@ function SortIcon({ field, sortField, sortOrder }: { field: SortField; sortField
     <ChevronDown className="h-3 w-3" />;
 }
 
+const CACHE_KEY = 'groups-default';
+function isDefaultView(filters: GroupFilters, sortField: SortField | null): boolean {
+  return filters.page === 1 && !filters.search && !filters.status && !filters.teacherId && sortField === null;
+}
+
 export function Groups() {
   const { showToast } = useToast();
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const initialCache = getPageCache<GroupsCache>(CACHE_KEY);
+  const [groups, setGroups] = useState<Group[]>(initialCache?.groups ?? []);
+  const [total, setTotal] = useState(initialCache?.total ?? 0);
+  const [totalPages, setTotalPages] = useState(initialCache?.totalPages ?? 1);
+  const [loading, setLoading] = useState(!initialCache);
   const [filters, setFilters] = useState<GroupFilters>({ page: 1, limit: 10 });
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebounce(searchInput, 300);
@@ -72,7 +85,8 @@ export function Groups() {
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const isDefault = isDefaultView(filters, sortField);
+    if (!isDefault || !getPageCache<GroupsCache>(CACHE_KEY)) setLoading(true);
     try {
       const res = await groupsApi.getAll(filters);
       let data = res.data;
@@ -105,6 +119,9 @@ export function Groups() {
       setGroups(data);
       setTotal(res.pagination?.total || 0);
       setTotalPages(res.pagination?.totalPages || 1);
+      if (isDefault) {
+        setPageCache<GroupsCache>(CACHE_KEY, { groups: data, total: res.pagination?.total || 0, totalPages: res.pagination?.totalPages || 1 });
+      }
     } catch {
       showToast('error', 'Ma\'lumotlarni yuklashda xatolik yuz berdi');
     } finally {

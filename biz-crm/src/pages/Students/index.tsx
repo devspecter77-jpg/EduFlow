@@ -15,6 +15,13 @@ import { ImportModal } from '@/components/ImportModal';
 import { importExportApi } from '@/lib/api/import-export';
 import { useToast } from '@/contexts/ToastContext';
 import { useDebounce } from '@/hooks/useDebounce';
+import { getPageCache, setPageCache } from '@/lib/pageDataCache';
+
+interface StudentsCache {
+  students: Student[];
+  total: number;
+  totalPages: number;
+}
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Faol',
@@ -74,12 +81,21 @@ function SortIcon({ field, sortField, sortOrder }: { field: SortField; sortField
     <ChevronDown className="h-3 w-3" />;
 }
 
+// Caching only applies to the plain, unfiltered first-page view — anything
+// else (search/status/page/sort applied) always fetches fresh so we never
+// risk showing a stale filtered result under the wrong filters.
+const CACHE_KEY = 'students-default';
+function isDefaultView(filters: StudentFilters, sortField: SortField | null): boolean {
+  return filters.page === 1 && !filters.search && !filters.status && !filters.gender && sortField === null;
+}
+
 export function Students() {
   const { showToast } = useToast();
-  const [students, setStudents] = useState<Student[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const initialCache = getPageCache<StudentsCache>(CACHE_KEY);
+  const [students, setStudents] = useState<Student[]>(initialCache?.students ?? []);
+  const [total, setTotal] = useState(initialCache?.total ?? 0);
+  const [totalPages, setTotalPages] = useState(initialCache?.totalPages ?? 1);
+  const [loading, setLoading] = useState(!initialCache);
   const [groupMap, setGroupMap] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<StudentFilters>({ page: 1, limit: 10 });
 
@@ -122,7 +138,8 @@ export function Students() {
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const isDefault = isDefaultView(filters, sortField);
+    if (!isDefault || !getPageCache<StudentsCache>(CACHE_KEY)) setLoading(true);
     try {
       const res = await studentsApi.getAll(filters);
       let data = res.data;
@@ -150,6 +167,9 @@ export function Students() {
       setStudents(data);
       setTotal(res.pagination.total);
       setTotalPages(res.pagination.totalPages);
+      if (isDefault) {
+        setPageCache<StudentsCache>(CACHE_KEY, { students: data, total: res.pagination.total, totalPages: res.pagination.totalPages });
+      }
     } catch {
       showToast('error', 'Ma\'lumotlarni yuklashda xatolik yuz berdi');
     } finally {

@@ -9,6 +9,10 @@ import { groupsApi, type Group } from '@/lib/api/groups';
 import { studentsApi } from '@/lib/api/students';
 import { useToast } from '@/contexts/ToastContext';
 import { StudentAttendanceHistory } from './StudentAttendanceHistory';
+import { getPageCache, setPageCache } from '@/lib/pageDataCache';
+
+const GROUPS_CACHE_KEY = 'attendance-groups';
+const studentsCacheKey = (groupId: string, date: string) => `attendance-students:${groupId}:${date}`;
 
 const STATUS_OPTIONS: { value: AttendanceStatus; label: string; icon: typeof CheckCircle2; color: string; bg: string }[] = [
   { value: 'PRESENT', label: 'Keldi',    icon: CheckCircle2, color: 'text-green-700 dark:text-green-400',  bg: 'bg-green-100 dark:bg-green-900/30' },
@@ -29,11 +33,13 @@ interface StudentRow {
 
 export function Attendance() {
   const { showToast } = useToast();
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const cachedGroups = getPageCache<Group[]>(GROUPS_CACHE_KEY);
+  const [groups, setGroups] = useState<Group[]>(cachedGroups ?? []);
+  const [selectedGroupId, setSelectedGroupId] = useState(cachedGroups?.[0]?.id ?? '');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [students, setStudents] = useState<StudentRow[]>([]);
-  const [loadingStudents, setLoadingStudents] = useState(false);
+  const cachedStudents = selectedGroupId ? getPageCache<StudentRow[]>(studentsCacheKey(selectedGroupId, selectedDate)) : undefined;
+  const [students, setStudents] = useState<StudentRow[]>(cachedStudents ?? []);
+  const [loadingStudents, setLoadingStudents] = useState(!!selectedGroupId && !cachedStudents);
   const [searchInput, setSearchInput] = useState('');
 
   // Tarix modal
@@ -52,6 +58,7 @@ export function Attendance() {
     try {
       const res = await groupsApi.getAll({ limit: 100, status: 'ACTIVE' });
       setGroups(res.data);
+      setPageCache(GROUPS_CACHE_KEY, res.data);
       if (res.data.length > 0 && !selectedGroupId) {
         setSelectedGroupId(res.data[0].id);
       }
@@ -63,7 +70,8 @@ export function Attendance() {
   // Barcha aktiv o'quvchilar va ularning davomati
   const loadStudentsWithAttendance = useCallback(async () => {
     if (!selectedGroupId) return;
-    setLoadingStudents(true);
+    const cacheKey = studentsCacheKey(selectedGroupId, selectedDate);
+    if (!getPageCache<StudentRow[]>(cacheKey)) setLoadingStudents(true);
     try {
       // Barcha aktiv o'quvchilarni olish
       const studentsRes = await studentsApi.getAll({ 
@@ -85,7 +93,7 @@ export function Attendance() {
         attendanceMap[a.studentId] = a;
       });
 
-      setStudents(allStudents.map((student) => {
+      const rows = allStudents.map((student) => {
         const att = attendanceMap[student.id];
         return {
           studentId: student.id,
@@ -96,7 +104,9 @@ export function Attendance() {
           notes: att?.notes || '',
           saving: false,
         };
-      }));
+      });
+      setStudents(rows);
+      setPageCache(cacheKey, rows);
     } catch {
       showToast('error', 'Ma\'lumotlarni yuklashda xatolik');
     } finally {

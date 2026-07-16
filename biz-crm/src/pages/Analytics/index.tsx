@@ -16,6 +16,17 @@ import {
   type PaymentStats,
   type TopGroup,
 } from '@/lib/api/reports';
+import { getPageCache, setPageCache } from '@/lib/pageDataCache';
+
+interface AnalyticsCache {
+  overview: OverviewStats;
+  revenue: MonthlyRevenue[];
+  growth: StudentGrowth[];
+  attendance: AttendanceStats;
+  paymentStats: PaymentStats;
+  topGroups: TopGroup[];
+}
+const CACHE_KEY = 'analytics';
 
 const COLORS = ['#0d9488', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
 const PIE_COLORS = {
@@ -74,17 +85,20 @@ function ChartSkeleton({ height = 300 }: { height?: number }) {
 }
 
 export function Analytics() {
-  const [overview, setOverview] = useState<OverviewStats | null>(null);
-  const [revenue, setRevenue] = useState<MonthlyRevenue[]>([]);
-  const [growth, setGrowth] = useState<StudentGrowth[]>([]);
-  const [attendance, setAttendance] = useState<AttendanceStats | null>(null);
-  const [paymentStats, setPaymentStats] = useState<PaymentStats | null>(null);
-  const [topGroups, setTopGroups] = useState<TopGroup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = getPageCache<AnalyticsCache>(CACHE_KEY);
+  const [overview, setOverview] = useState<OverviewStats | null>(cached?.overview ?? null);
+  const [revenue, setRevenue] = useState<MonthlyRevenue[]>(cached?.revenue ?? []);
+  const [growth, setGrowth] = useState<StudentGrowth[]>(cached?.growth ?? []);
+  const [attendance, setAttendance] = useState<AttendanceStats | null>(cached?.attendance ?? null);
+  const [paymentStats, setPaymentStats] = useState<PaymentStats | null>(cached?.paymentStats ?? null);
+  const [topGroups, setTopGroups] = useState<TopGroup[]>(cached?.topGroups ?? []);
+  // Only block on a spinner the first time this page has no cached data yet —
+  // repeat visits show the last-known numbers instantly while refreshing quietly.
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
 
   const loadAll = useCallback(async () => {
-    setLoading(true);
+    if (!getPageCache<AnalyticsCache>(CACHE_KEY)) setLoading(true);
     setError(null);
     try {
       const [ov, rev, gro, att, pay, top] = await Promise.all([
@@ -101,6 +115,7 @@ export function Analytics() {
       setAttendance(att);
       setPaymentStats(pay);
       setTopGroups(top);
+      setPageCache<AnalyticsCache>(CACHE_KEY, { overview: ov, revenue: rev, growth: gro, attendance: att, paymentStats: pay, topGroups: top });
     } catch {
       setError("Ma'lumotlarni yuklashda xatolik yuz berdi");
     } finally {

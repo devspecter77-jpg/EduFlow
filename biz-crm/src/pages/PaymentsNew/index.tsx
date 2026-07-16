@@ -8,6 +8,17 @@ import { paymentsNewApi, type StudentWithPaymentInfo, type PaymentStats } from '
 import { useToast } from '@/contexts/ToastContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ProcessPaymentModal } from './ProcessPaymentModal';
+import { getPageCache, setPageCache } from '@/lib/pageDataCache';
+
+const STATS_CACHE_KEY = 'payments-stats';
+const STUDENTS_CACHE_KEY = 'payments-students-default';
+interface PaymentsStudentsCache {
+  students: StudentWithPaymentInfo[];
+  pagination: { total: number; page: number; limit: number; totalPages: number };
+}
+function isDefaultView(filters: { status?: string; groupId?: string; page: number }, search: string): boolean {
+  return filters.page === 1 && !filters.status && !filters.groupId && !search;
+}
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Kutilmoqda',
@@ -32,10 +43,12 @@ const STATUS_ICONS = {
 
 export function PaymentsNew() {
   const { showToast } = useToast();
-  const [students, setStudents] = useState<StudentWithPaymentInfo[]>([]);
-  const [stats, setStats] = useState<PaymentStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const cachedStudents = getPageCache<PaymentsStudentsCache>(STUDENTS_CACHE_KEY);
+  const cachedStats = getPageCache<PaymentStats>(STATS_CACHE_KEY);
+  const [students, setStudents] = useState<StudentWithPaymentInfo[]>(cachedStudents?.students ?? []);
+  const [stats, setStats] = useState<PaymentStats | null>(cachedStats ?? null);
+  const [loading, setLoading] = useState(!cachedStudents);
+  const [statsLoading, setStatsLoading] = useState(!cachedStats);
 
   const [filters, setFilters] = useState<{
     status?: 'PENDING' | 'PARTIAL' | 'PAID' | 'OVERDUE';
@@ -50,7 +63,7 @@ export function PaymentsNew() {
   const [selectedStudent, setSelectedStudent] = useState<StudentWithPaymentInfo | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState(cachedStudents?.pagination ?? {
     total: 0,
     page: 1,
     limit: 20,
@@ -58,7 +71,8 @@ export function PaymentsNew() {
   });
 
   const loadStudents = useCallback(async () => {
-    setLoading(true);
+    const isDefault = isDefaultView(filters, debouncedSearch);
+    if (!isDefault || !getPageCache<PaymentsStudentsCache>(STUDENTS_CACHE_KEY)) setLoading(true);
     try {
       const response = await paymentsNewApi.getStudentsWithPaymentInfo({
         ...filters,
@@ -66,6 +80,9 @@ export function PaymentsNew() {
       });
       setStudents(response.data);
       setPagination(response.pagination);
+      if (isDefault) {
+        setPageCache<PaymentsStudentsCache>(STUDENTS_CACHE_KEY, { students: response.data, pagination: response.pagination });
+      }
     } catch (error) {
       showToast('error', 'Ma\'lumotlarni yuklashda xatolik');
       console.error(error);
@@ -75,10 +92,11 @@ export function PaymentsNew() {
   }, [filters, debouncedSearch, showToast]);
 
   const loadStats = useCallback(async () => {
-    setStatsLoading(true);
+    if (!getPageCache<PaymentStats>(STATS_CACHE_KEY)) setStatsLoading(true);
     try {
       const data = await paymentsNewApi.getPaymentStats();
       setStats(data);
+      setPageCache(STATS_CACHE_KEY, data);
     } catch (error) {
       console.error('Failed to load stats:', error);
     } finally {

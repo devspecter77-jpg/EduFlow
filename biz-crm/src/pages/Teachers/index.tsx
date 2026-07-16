@@ -16,6 +16,13 @@ import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { Loader3D } from '@/components/Loader3D';
 import { useToast } from '@/contexts/ToastContext';
 import { useDebounce } from '@/hooks/useDebounce';
+import { getPageCache, setPageCache } from '@/lib/pageDataCache';
+
+interface TeachersCache {
+  teachers: Teacher[];
+  total: number;
+  totalPages: number;
+}
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Faol',
@@ -73,12 +80,18 @@ function SortIcon({ field, sortField, sortOrder }: { field: SortField; sortField
     <ChevronDown className="h-3 w-3" />;
 }
 
+const CACHE_KEY = 'teachers-default';
+function isDefaultView(filters: TeacherFilters, sortField: SortField | null): boolean {
+  return filters.page === 1 && !filters.search && !filters.status && !filters.groupId && sortField === null;
+}
+
 export function Teachers() {
   const { showToast } = useToast();
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const initialCache = getPageCache<TeachersCache>(CACHE_KEY);
+  const [teachers, setTeachers] = useState<Teacher[]>(initialCache?.teachers ?? []);
+  const [total, setTotal] = useState(initialCache?.total ?? 0);
+  const [totalPages, setTotalPages] = useState(initialCache?.totalPages ?? 1);
+  const [loading, setLoading] = useState(!initialCache);
   const [groupMap, setGroupMap] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<TeacherFilters>({ page: 1, limit: 10 });
 
@@ -120,7 +133,8 @@ export function Teachers() {
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const isDefault = isDefaultView(filters, sortField);
+    if (!isDefault || !getPageCache<TeachersCache>(CACHE_KEY)) setLoading(true);
     try {
       const res = await teachersApi.getAll(filters);
       let data = res.data;
@@ -148,6 +162,9 @@ export function Teachers() {
       setTeachers(data);
       setTotal(res.pagination.total);
       setTotalPages(res.pagination.totalPages);
+      if (isDefault) {
+        setPageCache<TeachersCache>(CACHE_KEY, { teachers: data, total: res.pagination.total, totalPages: res.pagination.totalPages });
+      }
     } catch {
       showToast('error', 'Ma\'lumotlarni yuklashda xatolik yuz berdi');
     } finally {
