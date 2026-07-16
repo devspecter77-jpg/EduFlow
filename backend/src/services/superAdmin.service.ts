@@ -119,13 +119,17 @@ export async function getCenterById(id: string) {
 }
 
 export async function getCenterStats(centerId: string) {
-  // Get admin user for this center
+  // Get the center's primary (earliest-registered) user — self-registered
+  // centers default to MANAGER, not ADMIN, so this must not hardcode a role.
   const adminUser = await db.user.findFirst({
-    where: { centerId, role: 'ADMIN' },
+    where: { centerId, role: { not: 'SUPER_ADMIN' } },
+    orderBy: { createdAt: 'asc' },
     select: { id: true },
   });
 
-  if (!adminUser) return null;
+  if (!adminUser) {
+    return { students: 0, teachers: 0, groups: 0, totalRevenue: 0 };
+  }
 
   const userId = adminUser.id;
   const [students, teachers, groups, payments] = await Promise.all([
