@@ -17,6 +17,17 @@ import { trackFailedLogin, resetBruteForce } from '@/middleware/security.middlew
 
 const authService = new AuthService();
 
+// Frontend (Vercel) and backend (Railway) are different domains, so the
+// refresh-token cookie is a cross-site cookie — SameSite=strict/lax would
+// never be sent on those requests, silently breaking token refresh and
+// forcing every user back to /login. SameSite=none requires Secure.
+const isProd = process.env.NODE_ENV === 'production';
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+};
+
 /**
  * Register a new user
  * POST /api/auth/register
@@ -50,9 +61,7 @@ export const register = async (
 
   // Set refresh token in HTTP-only cookie only — never in the JSON body
   res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    ...refreshCookieOptions,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
 
@@ -103,9 +112,7 @@ export const login = async (
     : 7 * 24 * 60 * 60 * 1000; // 7 days
 
   res.cookie('refreshToken', result.refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    ...refreshCookieOptions,
     maxAge,
   });
 
@@ -162,9 +169,7 @@ export const refresh = async (
 
   // Set new refresh token in HTTP-only cookie only — never in the JSON body
   res.cookie('refreshToken', result.refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    ...refreshCookieOptions,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
 
@@ -187,7 +192,7 @@ export const logout = async (
   }
 
   // Clear refresh token cookie
-  res.clearCookie('refreshToken');
+  res.clearCookie('refreshToken', refreshCookieOptions);
 
   sendSuccess(res, null, 'Logout successful');
 };
@@ -211,7 +216,7 @@ export const logoutAll = async (
   await authService.logoutAll(req.user.userId);
 
   // Clear refresh token cookie
-  res.clearCookie('refreshToken');
+  res.clearCookie('refreshToken', refreshCookieOptions);
 
   sendSuccess(res, null, 'Logged out from all devices');
 };
