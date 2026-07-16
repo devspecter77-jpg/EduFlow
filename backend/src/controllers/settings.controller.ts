@@ -87,6 +87,20 @@ export class SettingsController {
         ...validation.data,
       });
 
+      // Keep User.centerName and the actual Center record in sync — both are
+      // separate denormalized copies of the name that the SuperAdmin panel
+      // reads directly, and would otherwise silently go stale here.
+      if (validation.data.centerName !== undefined) {
+        const user = await prisma.user.findUnique({ where: { id: userId }, select: { centerId: true } });
+        const tasks: Promise<unknown>[] = [
+          prisma.user.update({ where: { id: userId }, data: { centerName: validation.data.centerName } }),
+        ];
+        if (user?.centerId) {
+          tasks.push(prisma.center.update({ where: { id: user.centerId }, data: { name: validation.data.centerName } }));
+        }
+        await Promise.all(tasks);
+      }
+
       await auditLogRepository.create({
         userId,
         action: 'UPDATE',

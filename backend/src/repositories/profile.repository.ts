@@ -64,8 +64,26 @@ export class ProfileRepository {
     const user = await prisma.user.update({
       where: { id: userId },
       data: updateData as any,
-      select: profileSelect,
+      select: { ...profileSelect, centerId: true },
     });
+
+    // Keep the Center record and per-user Settings copy of the name in sync —
+    // both are separate denormalized copies read by the SuperAdmin panel.
+    if (data.centerName !== undefined) {
+      const tasks: Promise<unknown>[] = [];
+      if ((user as any).centerId) {
+        tasks.push(prisma.center.update({
+          where: { id: (user as any).centerId },
+          data: { name: data.centerName },
+        }));
+      }
+      tasks.push(prisma.settings.updateMany({
+        where: { userId },
+        data: { centerName: data.centerName },
+      }));
+      await Promise.all(tasks);
+    }
+
     return { ...user, email: null } as ProfileRow;
   }
 

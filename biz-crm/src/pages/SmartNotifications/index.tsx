@@ -439,6 +439,12 @@ function SmsSendSection() {
         </div>
       </div>
 
+      <p className="flex items-start gap-1.5 text-xs text-muted-foreground leading-relaxed rounded-lg border bg-muted/30 p-3">
+        <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+        SMS faqat telefon orqali yuboriladi (SMS ilovasini ochish uchun). Agar hozir kompyuterdan kirgan bo'lsangiz,
+        SMS yubormoqchi bo'lsangiz — saytimizga <b>telefoningiz orqali</b> kiring.
+      </p>
+
       {filter === 'today' && !loading && visibleStudents.length > 0 && (
         <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-4 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-3">
