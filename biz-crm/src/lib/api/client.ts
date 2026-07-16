@@ -93,12 +93,20 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        // Clear auth state and redirect
+        // Only a previously-logged-in session actually needs to be kicked to
+        // /login — an anonymous visitor (e.g. browsing the public landing
+        // page, which calls some endpoints that 401 without a session) was
+        // never logged in to begin with, so forcing them off whatever page
+        // they're on is wrong and was the cause of the "random redirect to
+        // login" reports.
+        const hadSession = !!localStorage.getItem('accessToken');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 100);
+        if (hadSession) {
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 100);
+        }
         return Promise.reject(normalizeError(refreshError));
       } finally {
         isRefreshing = false;

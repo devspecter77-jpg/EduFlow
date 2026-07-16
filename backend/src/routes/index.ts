@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { authenticate } from '@/middleware/auth.middleware';
 import { checkSubscription } from '@/middleware';
+import asyncHandler from '@/middleware/asyncHandler';
+import { getPublicPlans } from '@/controllers/billing.controller';
 import healthRoutes from './health.routes';
 import authRoutes from './auth.routes';
 import studentRoutes from './student.routes';
@@ -25,6 +27,10 @@ const router = Router();
 
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
+
+// Public: used by the marketing pricing page — must come before the
+// authenticated '/billing' mount below, which would otherwise shadow it.
+router.get('/billing/plans', asyncHandler(getPublicPlans));
 
 // Protected routes with authentication + subscription check
 router.use('/students', authenticate, checkSubscription, studentRoutes);

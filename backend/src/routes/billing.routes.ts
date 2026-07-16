@@ -8,7 +8,6 @@ import { authenticate } from '@/middleware/auth.middleware';
 import asyncHandler from '@/middleware/asyncHandler';
 import type { Request, Response, NextFunction } from 'express';
 import {
-  getPublicPlans,
   getMySubscription,
   createPaymentRequest,
   getMyPaymentRequests,
@@ -20,10 +19,9 @@ import {
 
 const router = Router();
 
-// ─── Public Routes (no auth) ──────────────────────────────────────────────
-// Used by the marketing pricing page to mirror the live plan configuration
-router.get('/plans', asyncHandler(getPublicPlans));
-
+// Note: GET /plans (public) is mounted directly in routes/index.ts, ahead of
+// the authenticated '/billing' mount that wraps this whole router — it can't
+// live here, since that outer authenticate would gate it before it arrives.
 router.use(authenticate);
 
 // ─── Admin / Center User Routes ───────────────────────────────────────────
