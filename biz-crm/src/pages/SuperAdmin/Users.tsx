@@ -15,6 +15,8 @@ import {
   Phone,
   Calendar,
   LogIn,
+  X,
+  Clock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -48,6 +50,7 @@ export function SuperAdminUsers() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [roleFilter, setRoleFilter] = useState('');
+  const [viewUser, setViewUser] = useState<User | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
 
   const load = useCallback(async () => {
@@ -290,13 +293,20 @@ export function SuperAdminUsers() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => setViewUser(user)}
+                          className="rounded-lg p-2 hover:bg-accent"
+                          title="Foydalanuvchi ma'lumotlari"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                         {user.center && (
                           <button
                             onClick={() => navigate(`/super-admin/centers/${user.center!.id}`)}
                             className="rounded-lg p-2 hover:bg-accent"
                             title="Markazni ko'rish"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Building2 className="h-4 w-4" />
                           </button>
                         )}
                         {user.role !== 'SUPER_ADMIN' && (
@@ -366,6 +376,108 @@ export function SuperAdminUsers() {
           </div>
         )}
       </div>
+
+      {/* User Detail Modal */}
+      {viewUser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setViewUser(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-card border shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <h2 className="text-lg font-semibold">Foydalanuvchi ma'lumotlari</h2>
+              <button onClick={() => setViewUser(null)} className="rounded-lg p-2 hover:bg-accent transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/30 text-2xl font-bold text-teal-600 dark:text-teal-400">
+                  {viewUser.fullName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{viewUser.fullName}</h3>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium mt-1 ${getRoleBadge(viewUser.role)}`}>
+                    {getRoleLabel(viewUser.role)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                    <Phone className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Telefon</p>
+                    <p className="text-sm font-medium">{viewUser.phone}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                    <Building2 className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Markaz</p>
+                    <p className="text-sm font-medium">{viewUser.centerName}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                    <Shield className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Holati</p>
+                    <p className="text-sm font-medium">{viewUser.isActive ? 'Faol' : 'Bloklangan'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                    <Calendar className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Ro'yxatdan o'tgan sana</p>
+                    <p className="text-sm font-medium">
+                      {new Date(viewUser.createdAt).toLocaleString('uz-UZ', {
+                        day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                    <Clock className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Oxirgi kirish</p>
+                    <p className="text-sm font-medium">
+                      {viewUser.lastLoginAt
+                        ? new Date(viewUser.lastLoginAt).toLocaleString('uz-UZ', {
+                            day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                          })
+                        : 'Hech qachon'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 border-t px-6 py-4">
+              <button onClick={() => setViewUser(null)} className="flex-1 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">
+                Yopish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
