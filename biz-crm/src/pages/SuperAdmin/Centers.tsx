@@ -11,6 +11,13 @@ import {
   Unlock,
   Eye,
   RefreshCw,
+  X,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  Users as UsersIcon,
+  FileText,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +35,7 @@ export function SuperAdminCenters() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState('');
+  const [viewCenter, setViewCenter] = useState<Center | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -199,11 +207,18 @@ export function SuperAdminCenters() {
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => navigate(`/super-admin/centers/${center.id}`)}
+                          onClick={() => setViewCenter(center)}
                           className="rounded-lg p-2 hover:bg-accent"
                           title="Ko'rish"
                         >
                           <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/super-admin/centers/${center.id}`)}
+                          className="rounded-lg p-2 hover:bg-accent"
+                          title="Batafsil sahifa"
+                        >
+                          <Building2 className="h-4 w-4" />
                         </button>
                         {center.status === 'ACTIVE' ? (
                           <button
@@ -266,6 +281,127 @@ export function SuperAdminCenters() {
           </div>
         )}
       </div>
+
+      {/* Center Detail Modal */}
+      {viewCenter && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setViewCenter(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-card border shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <h2 className="text-lg font-semibold">Markaz ma'lumotlari</h2>
+              <button onClick={() => setViewCenter(null)} className="rounded-lg p-2 hover:bg-accent transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/30 text-2xl font-bold text-teal-600 dark:text-teal-400">
+                  {viewCenter.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{viewCenter.name}</h3>
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium mt-1 ${
+                      viewCenter.status === 'ACTIVE'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    }`}
+                  >
+                    {viewCenter.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                {viewCenter.phone && (
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                      <Phone className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Telefon</p>
+                      <p className="text-sm font-medium">{viewCenter.phone}</p>
+                    </div>
+                  </div>
+                )}
+                {viewCenter.email && (
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                      <Mail className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm font-medium">{viewCenter.email}</p>
+                    </div>
+                  </div>
+                )}
+                {viewCenter.address && (
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                      <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Manzil</p>
+                      <p className="text-sm font-medium">{viewCenter.address}</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                    <UsersIcon className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Foydalanuvchilar soni</p>
+                    <p className="text-sm font-medium">{viewCenter._count?.users ?? 0}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                    <Calendar className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Ro'yxatdan o'tgan sana</p>
+                    <p className="text-sm font-medium">
+                      {new Date(viewCenter.createdAt).toLocaleString('uz-UZ', {
+                        day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+                {viewCenter.description && (
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-md bg-teal-50 dark:bg-teal-900/20 p-1.5">
+                      <FileText className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tavsif</p>
+                      <p className="text-sm font-medium">{viewCenter.description}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 border-t px-6 py-4">
+              <button onClick={() => setViewCenter(null)} className="flex-1 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">
+                Yopish
+              </button>
+              <button
+                onClick={() => { navigate(`/super-admin/centers/${viewCenter.id}`); setViewCenter(null); }}
+                className="flex-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Batafsil sahifa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
