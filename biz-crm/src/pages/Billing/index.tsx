@@ -16,14 +16,12 @@ const PAYMENT_CARDS = [
     number: '9860 0826 3646 1673',
     owner: 'RAJABOVA SHAXNOZA',
     color: 'from-emerald-500 to-teal-600',
-    icon: '🇺🇿',
   },
   {
     type: 'Visa',
     number: '4195 2500 4054 6168',
     owner: 'SHAHINA BONU FOZILOVA',
     color: 'from-blue-500 to-indigo-600',
-    icon: '💳',
   },
 ];
 
@@ -90,7 +88,7 @@ function PaymentModal({ onClose }: {
               <div key={card.type} className={`bg-gradient-to-r ${card.color} rounded-2xl p-4 text-white shadow-lg`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-bold text-sm tracking-widest">{card.type}</span>
-                  <span className="text-lg">{card.icon}</span>
+                  <CreditCard className="h-5 w-5 opacity-90" />
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-mono text-base sm:text-lg tracking-wide sm:tracking-widest break-all">{card.number}</span>
