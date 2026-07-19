@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { X, Home, LogOut, Shield, Users, Award, CreditCard } from "lucide-react";
+import { X, Home, Shield, Users, Award, CreditCard } from "lucide-react";
 import { NAV_ITEMS } from "@/constants/navigation";
 import { cn } from "@/utils/cn";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ interface MobileSidebarProps {
 }
 
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { t } = useApp();
   const navigate = useNavigate();
 
@@ -23,12 +23,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = previousOverflow; };
   }, [isOpen]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-    onClose();
-  };
 
   const navLabel = (href: string): string => {
     if (href === '/dashboard')               return t.nav.dashboard;
@@ -181,11 +175,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
                 <Home className="h-5 w-5" />
                 <span>{t.nav.home}</span>
-              </button>
-              <button onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
-                <LogOut className="h-5 w-5" />
-                <span>{t.nav.logout}</span>
               </button>
             </div>
             <div className="px-4 pb-4 pt-2">

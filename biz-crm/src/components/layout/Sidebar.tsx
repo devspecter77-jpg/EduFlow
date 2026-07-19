@@ -3,20 +3,15 @@ import { NAV_ITEMS } from '@/constants/navigation';
 import { cn } from '@/utils/cn';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
-import { Home, LogOut, Shield, Users, Award, CreditCard, Building2 } from 'lucide-react';
+import { Home, Shield, Users, Award, CreditCard, Building2 } from 'lucide-react';
 import { TrialBadgeSidebar } from '@/components/TrialBadge';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 
 export function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { t } = useApp();
   const navigate = useNavigate();
   const { unreadCount } = useUnreadNotifications();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   // Map nav href → translation key
   const navLabel = (href: string): string => {
@@ -154,13 +149,6 @@ export function Sidebar() {
             >
               <Home className="h-5 w-5" />
               <span>{t.nav.home}</span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>{t.nav.logout}</span>
             </button>
           </div>
           <div className="px-4 pb-4">
